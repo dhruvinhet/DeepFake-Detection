@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard: Deepfake Detector & Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+            color: #00ffcc;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(transparent 0%, rgba(0, 255, 204, 0.1) 1px, transparent 2px);
+            pointer-events: none;
+            animation: scanline 4s linear infinite;
+            z-index: -1;
+        }
+
+        header {
+            background: linear-gradient(90deg, #ff00ff, #00ffcc);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px #00ffcc;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header h1 {
+            font-size: 3em;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #ff00ff;
+            animation: glitch 2s linear infinite;
+        }
+
+        .sidebar {
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: rgba(10, 10, 10, 0.9);
+            border-right: 2px solid #00ffcc;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+            z-index: 10;
+        }
+
+        .sidebar h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 255, 204, 0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar ul li:hover {
+            background: #00ffcc;
+            color: #000;
+            box-shadow: 0 0 15px #00ffcc;
+        }
+
+        .main-content {
+            margin-left: 270px;
+            padding: 40px;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid #00ffcc;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .mode-toggle {
+            margin: 20px 0;
+        }
+
+        .mode-toggle label {
+            margin-right: 10px;
+        }
+
+        .mode-toggle input {
+            margin-right: 5px;
+        }
+
+        label.upload-btn, #start-webcam, #generate-deepfake {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #ff00ff;
+            color: #000;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px #ff00ff;
+            margin: 10px;
+        }
+
+        label.upload-btn:hover, #start-webcam:hover, #generate-deepfake:hover {
+            background: #00ffcc;
+            box-shadow: 0 0 25px #00ffcc;
+        }
+
+        #image-preview, #webcam-container, #deepfake-preview {
+            max-width: 400px;
+            margin: 20px auto;
+            position: relative;
+            display: none;
+        }
+
+        #webcam-video, #webcam-canvas {
+            width: 100%;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+        }
+
+        #webcam-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .result-section {
+            display: none;
+            padding: 20px;
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid #ff00ff;
+            border-radius: 10px;
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        .result-section h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .confidence-meter {
+            width: 150px;
+            height: 150px;
+            margin: 20px auto;
+            position: relative;
+        }
+
+        .confidence-meter svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .confidence-meter circle {
+            fill: none;
+            stroke-width: 10;
+            stroke: #00ffcc;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .confidence-meter .bg-circle {
+            stroke: #333;
+        }
+
+        #error-image, #heatmap-image {
+            max-width: 100%;
+            border: 2px solid #00ffcc;
+            border-radius: 5px;
+            margin-top: 20px;
+            box-shadow: 0 0 20px #00ffcc;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #00ffcc;
+            color: #000;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 20px;
+            box-shadow: 0 0 15px #00ffcc;
+        }
+
+        .history-section, .visualization-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid #ff00ff;
+            border-radius: 10px;
+        }
+
+        .history-section h2, .visualization-section h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-list li {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        #threejs-container {
+            width: 100%;
+            height: 300px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-top: 2px solid #00ffcc;
+            box-shadow: 0 0 20px #00ffcc;
+            position: relative;
+        }
+
+        footer p {
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: #ff00ff;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px, 0) skew(0deg); }
+            4%, 60% { transform: translate(-2px, 0) skew(0deg); }
+            62% { transform: translate(0, 0) skew(5deg); }
+        }
+
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ff00ff;
+            border-top: 5px solid #00ffcc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+</head>
+<body>
+    <div id="particles"></div>
+
+    <header>
+        <h1>CyberGuard: Deepfake Detector & Generator</h1>
+    </header>
+
+    <div class="sidebar">
+        <h2>Control Panel</h2>
+        <ul>
+            <li>Home</li>
+            <li>Analyze Image</li>
+            <li>Real-Time Mode</li>
+            <li>Generate Deepfake</li>
+            <li>History</li>
+            <li>3D Visualization</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="upload-section">
+                <div class="mode-toggle">
+                    <label><input type="radio" name="mode" value="image" checked> Image Upload</label>
+                    <label><input type="radio" name="mode" value="webcam"> Real-Time Webcam</label>
+                    <label><input type="radio" name="mode" value="generator"> Deepfake Generator</label>
+                </div>
+                <label for="image-upload" class="upload-btn">Upload Image</label>
+                <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                <button id="start-webcam" style="display: none;">Start Webcam</button>
+                <button id="generate-deepfake" style="display: none;">Generate Deepfake</button>
+                <img id="image-preview" src="" alt="Image Preview">
+                <div id="webcam-container">
+                    <video id="webcam-video" autoplay></video>
+                    <canvas id="webcam-canvas"></canvas>
+                </div>
+                <img id="deepfake-preview" src="" alt="Deepfake Preview">
+                <div class="spinner" id="spinner"></div>
+            </div>
+
+            <div class="result-section" id="result-section">
+                <h2>Analysis Results</h2>
+                <p id="prediction">Prediction: <span></span></p>
+                <p id="confidence">Confidence: <span></span></p>
+                <div class="confidence-meter">
+                    <svg>
+                        <circle class="bg-circle" cx="75" cy="75" r="70"></circle>
+                        <circle id="confidence-circle" cx="75" cy="75" r="70"></circle>
+                    </svg>
+                </div>
+                <p id="explanation">Explanation: <span></span></p>
+                <img id="error-image" src="" alt="Error Visualization" style="display: none;">
+                <img id="heatmap-image" src="" alt="Heatmap Visualization" style="display: none;">
+                <a href="#" id="download-btn" class="download-btn" style="display: none;">Download Result</a>
+            </div>
+
+            <div class="history-section">
+                <h2>Analysis History</h2>
+                <ul class="history-list" id="history-list"></ul>
+            </div>
+
+            <div class="visualization-section">
+                <h2>3D Facial Anomaly Visualization</h2>
+                <div id="threejs-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Developed by [Your Name] | <a href="https://github.com/yourusername" target="_blank">GitHub</a> | Powered by AI & Cybersecurity</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script>
+        particlesJS("particles", {
+            particles: {
+                number: { value: 100, density: { enable: true, value_area: 800 } },
+                color: { value: ["#00ffcc", "#ff00ff"] },
+                shape: { type: "circle" },
+                opacity: { value: 0.7, random: true },
+                size: { value: 4, random: true },
+                line_linked: { enable: true, distance: 150, color: "#ff00ff", opacity: 0.4, width: 1 },
+                move: { enable: true, speed: 3, direction: "none", random: true, straight: false, out_mode: "out" }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" } },
+                modes: { repulse: { distance: 100, duration: 0.4 }, push: { particles_nb: 4 } }
+            },
+            retina_detect: true
+        });
+
+        const imageUpload = document.getElementById("image-upload");
+        const startWebcam = document.getElementById("start-webcam");
+        const generateDeepfake = document.getElementById("generate-deepfake");
+        const webcamVideo = document.getElementById("webcam-video");
+        const webcamCanvas = document.getElementById("webcam-canvas");
+        const webcamContainer = document.getElementById("webcam-container");
+        const deepfakePreview = document.getElementById("deepfake-preview");
+        const resultSection = document.getElementById("result-section");
+        const spinner = document.getElementById("spinner");
+        const prediction = document.getElementById("prediction").querySelector("span");
+        const confidence = document.getElementById("confidence").querySelector("span");
+        const confidenceCircle = document.getElementById("confidence-circle");
+        const explanation = document.getElementById("explanation").querySelector("span");
+        const errorImage = document.getElementById("error-image");
+        const heatmapImage = document.getElementById("heatmap-image");
+        const downloadBtn = document.getElementById("download-btn");
+        const imagePreview = document.getElementById("image-preview");
+        const historyList = document.getElementById("history-list");
+        const modeToggle = document.querySelectorAll('input[name="mode"]');
+        const threejsContainer = document.getElementById("threejs-container");
+        let history = [];
+        let stream = null;
+        let scene, camera, renderer, mesh;
+
+        // Initialize Three.js
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, threejsContainer.clientWidth / 300, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(threejsContainer.clientWidth, 300);
+            threejsContainer.appendChild(renderer.domElement);
+        
+            // Add lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(0, 1, 1);
+            scene.add(directionalLight);
+        
+            // Adjust camera position for better view of the whole body
+            camera.position.set(0, 0, 3);
+        
+            // Create a group to hold all dots
+            dotGroup = new THREE.Group();
+            scene.add(dotGroup);
+        
+            const animate = () => {
+                requestAnimationFrame(animate);
+                if (dotGroup) dotGroup.rotation.y += 0.01; // Rotate the entire group
+                renderer.render(scene, camera);
+            };
+            animate();
+        
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            renderer.domElement.addEventListener('mousedown', (e) => isDragging = true);
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (isDragging && dotGroup) {
+                    const deltaMove = {
+                        x: e.offsetX - previousMousePosition.x,
+                        y: e.offsetY - previousMousePosition.y
+                    };
+                    dotGroup.rotation.y += deltaMove.x * 0.01;
+                    dotGroup.rotation.x += deltaMove.y * 0.01;
+                }
+                previousMousePosition = { x: e.offsetX, y: e.offsetY };
+            });
+            renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+        }
+        
+        function update3DModel(landmarks, label, anomalyIndices) {
+            console.log("Updating 3D model with landmarks:", landmarks, "Anomaly Indices:", anomalyIndices);
+            if (!landmarks || landmarks.length === 0) {
+                console.warn("No landmarks available for 3D visualization");
+                return;
+            }
+        
+            if (dotGroup) scene.remove(dotGroup);
+            dotGroup = new THREE.Group();
+            scene.add(dotGroup);
+        
+            // Create cyan dots for all detected landmarks
+            const dotGeometry = new THREE.SphereGeometry(0.01, 16, 16);
+            const cyanMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+        
+            landmarks.forEach(landmark => {
+                const dot = new THREE.Mesh(dotGeometry, cyanMaterial);
+                dot.position.set((landmark.x - 0.5) * 2, -(landmark.y - 0.5) * 2, landmark.z * 5);
+                dotGroup.add(dot);
+            });
+        
+            // Create red dots for all anomalies
+            const redMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+        
+            function addRedDots(indices, type) {
+                indices.forEach(idx => {
+                    const landmark = landmarks.find(lm => lm.type === type && lm.idx === idx);
+                    if (landmark) {
+                        const dot = new THREE.Mesh(dotGeometry, redMaterial);
+                        dot.position.set((landmark.x - 0.5) * 2, -(landmark.y - 0.5) * 2, landmark.z * 5);
+                        dotGroup.add(dot);
+                    }
+                });
+            }
+        
+            if (label === "Deepfake") {
+                if (anomalyIndices.face) addRedDots(anomalyIndices.face, "face");
+                if (anomalyIndices.hands) addRedDots(anomalyIndices.hands, "hand");
+                if (anomalyIndices.pose) addRedDots(anomalyIndices.pose, "pose");
+                if (anomalyIndices.color) addRedDots(anomalyIndices.color, "color");
+            }
+        
+            console.log("Dot group added to scene with", dotGroup.children.length, "dots");
+        }
+        
+        function resetUI() {
+            imagePreview.src = "";
+            imagePreview.style.display = "none";
+            deepfakePreview.src = "";
+            deepfakePreview.style.display = "none";
+            resultSection.style.display = "none";
+            prediction.textContent = "";
+            confidence.textContent = "";
+            confidenceCircle.style.strokeDashoffset = 440;
+            explanation.textContent = "";
+            errorImage.style.display = "none";
+            heatmapImage.style.display = "none";
+            downloadBtn.style.display = "none";
+            spinner.style.display = "none";
+            webcamContainer.style.display = "none";
+            stopWebcam();
+            if (mesh) scene.remove(mesh);
+        }
+
+        modeToggle.forEach(input => {
+            input.addEventListener("change", (e) => {
+                const mode = e.target.value;
+                resetUI();
+                if (mode === "image") {
+                    imageUpload.style.display = "block";
+                    startWebcam.style.display = "none";
+                    generateDeepfake.style.display = "none";
+                } else if (mode === "webcam") {
+                    imageUpload.style.display = "none";
+                    startWebcam.style.display = "block";
+                    generateDeepfake.style.display = "none";
+                } else if (mode === "generator") {
+                    imageUpload.style.display = "block";
+                    startWebcam.style.display = "none";
+                    generateDeepfake.style.display = "block";
+                }
+            });
+        });
+
+        imageUpload.addEventListener("change", async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            resetUI();
+            imagePreview.src = URL.createObjectURL(file);
+            imagePreview.style.display = "block";
+            spinner.style.display = "block";
+
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            if (mode === "generator") {
+                generateDeepfakeImage(file);
+            } else {
+                const formData = new FormData();
+                formData.append("image", file);
+                await analyzeImage(formData);
+            }
+        });
+
+        startWebcam.addEventListener("click", async () => {
+            resetUI();
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcamVideo.srcObject = stream;
+                webcamContainer.style.display = "block";
+                webcamCanvas.width = webcamVideo.videoWidth || 640;
+                webcamCanvas.height = webcamVideo.videoHeight || 480;
+                analyzeWebcam();
+            } catch (err) {
+                console.error("Webcam error:", err);
+                explanation.textContent = "Failed to access webcam.";
+                resultSection.style.display = "block";
+            }
+        });
+
+        generateDeepfake.addEventListener("click", () => {
+            if (imagePreview.src) {
+                generateDeepfakeImage(null);
+            }
+        });
+
+        function stopWebcam() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                webcamVideo.srcObject = null;
+                stream = null;
+            }
+        }
+
+        async function analyzeImage(formData) {
+            try {
+                const response = await fetch("http://127.0.0.1:5000/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log("Server response:", result);
+                displayResult(result, false);
+            } catch (error) {
+                console.error("Error:", error);
+                explanation.textContent = `Analysis failed: ${error.message}`;
+                resultSection.style.display = "block";
+            } finally {
+                spinner.style.display = "none";
+            }
+        }
+
+        function analyzeWebcam() {
+            const ctx = webcamCanvas.getContext("2d");
+
+            async function processFrame() {
+                if (!stream) return;
+                ctx.drawImage(webcamVideo, 0, 0, webcamCanvas.width, webcamCanvas.height);
+                const blob = await new Promise(resolve => webcamCanvas.toBlob(resolve, "image/jpeg"));
+                const formData = new FormData();
+                formData.append("image", blob, "webcam_frame.jpg");
+
+                try {
+                    const response = await fetch("http://127.0.0.1:5000/predict", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        displayResult(result, true);
+                    } else {
+                        throw new Error("Prediction failed");
+                    }
+                } catch (error) {
+                    console.error("Webcam frame error:", error);
+                    ctx.fillStyle = "#ff00ff";
+                    ctx.font = "40px Orbitron";
+                    ctx.strokeStyle = "#000";
+                    ctx.lineWidth = 2;
+                    ctx.strokeText("Error", 20, 50);
+                    ctx.fillText("Error", 20, 50);
+                }
+
+                requestAnimationFrame(processFrame);
+            }
+
+            processFrame();
+        }
+
+        function generateDeepfakeImage(file) {
+            spinner.style.display = "block";
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                const eyeWidth = canvas.width * 0.1;
+                const eyeHeight = canvas.height * 0.1;
+                const leftEyeX = canvas.width * 0.3;
+                const leftEyeY = canvas.height * 0.3;
+                ctx.clearRect(leftEyeX, leftEyeY, eyeWidth, eyeHeight);
+                ctx.drawImage(img, leftEyeX + 20, leftEyeY, eyeWidth, eyeHeight, leftEyeX, leftEyeY, eyeWidth, eyeHeight);
+
+                deepfakePreview.src = canvas.toDataURL("image/jpeg");
+                deepfakePreview.style.display = "block";
+                explanation.textContent = "Deepfake generated: Left eye shifted.";
+                resultSection.style.display = "block";
+                spinner.style.display = "none";
+            };
+
+            img.src = file ? URL.createObjectURL(file) : imagePreview.src;
+        }
+
+        function displayResult(result, isWebcam) {
+            const { label, confidence: conf, explanation: exp, errorImgPath, heatmapPath, landmarks, anomalyIndices } = result;
+            const timestamp = Date.now();
+        
+            console.log("Displaying result:", { label, conf, landmarks: landmarks ? landmarks.length : "undefined", anomalyIndices });
+        
+            prediction.textContent = label;
+            confidence.textContent = `${(conf * 100).toFixed(2)}%`;
+            const dashOffset = 440 - (440 * conf);
+            confidenceCircle.style.strokeDashoffset = dashOffset;
+            explanation.textContent = exp;
+        
+            if (label === "Deepfake" && errorImgPath) {
+                errorImage.src = `${errorImgPath}?t=${timestamp}`;
+                errorImage.style.display = "block";
+                downloadBtn.href = errorImgPath;
+                downloadBtn.style.display = "inline-block";
+            } else {
+                errorImage.style.display = "none";
+                downloadBtn.style.display = "none";
+            }
+        
+            if (label === "Deepfake" && heatmapPath) {
+                heatmapImage.src = `${heatmapPath}?t=${timestamp}`;
+                heatmapImage.style.display = "block";
+            } else {
+                heatmapImage.style.display = "none";
+            }
+        
+            const historyItem = `${new Date().toLocaleTimeString()} - ${label} (${(conf * 100).toFixed(2)}%)`;
+            history.unshift(historyItem);
+            if (history.length > 5) history.pop();
+            historyList.innerHTML = history.map(item => `<li>${item}</li>`).join("");
+        
+            update3DModel(landmarks, label, anomalyIndices);
+        
+            if (isWebcam) {
+                const ctx = webcamCanvas.getContext("2d");
+                ctx.clearRect(0, 0, webcamCanvas.width, webcamCanvas.height);
+                ctx.font = "40px Orbitron";
+                ctx.fillStyle = label === "Real" ? "#00ffcc" : "#ff00ff";
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                const text = `${label} (${(conf * 100).toFixed(2)}%)`;
+                const textWidth = ctx.measureText(text).width;
+                const x = (webcamCanvas.width - textWidth) / 2;
+                ctx.strokeText(text, x, 50);
+                ctx.fillText(text, x, 50);
+            }
+        
+            resultSection.style.display = "block";
+        }
+
+        init3D();
+    </script>
+</body>
+</html>
