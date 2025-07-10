@@ -2,17 +2,14 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from keras.models import load_model
+from keras.preprocessing.image import load_img, img_to_array
 import mediapipe as mp
 from flask import Flask, request, jsonify, send_file, render_template_string
 from werkzeug.utils import secure_filename
 import logging
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.spatial import distance
-from skimage.filters import laplace
-from skimage.measure import shannon_entropy
 
 app = Flask(__name__)
 
@@ -236,8 +233,8 @@ def predict():
             "label": label,
             "confidence": confidence,
             "explanation": explanation,
-            "errorImgPath": "/static/deepfake_errors_fixed.png" if error_img_path else None,
-            "heatmapPath": "/static/heatmap.png" if heatmap_path else None,
+            "errorImgPath": os.path.basename(error_img_path) if error_img_path else None,
+            "heatmapPath": os.path.basename(heatmap_path) if heatmap_path else None,
             "landmarks": landmarks if landmarks else [],
             "anomalyIndices": anomaly_indices
         }

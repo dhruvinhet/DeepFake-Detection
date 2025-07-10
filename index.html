@@ -39,6 +39,13 @@
             box-shadow: 0 0 20px #00ffcc;
             position: relative;
             overflow: hidden;
+            margin-left: 250px; /* Account for sidebar width */
+        }
+
+        @media (max-width: 768px) {
+            header {
+                margin-left: 0; /* Reset on smaller screens */
+            }
         }
 
         header h1 {
@@ -47,6 +54,13 @@
             letter-spacing: 5px;
             text-shadow: 0 0 10px #00ffcc, 0 0 20px #ff00ff;
             animation: glitch 2s linear infinite;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+                letter-spacing: 3px;
+            }
         }
 
         .sidebar {
@@ -60,12 +74,97 @@
             padding: 20px;
             box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
             z-index: 10;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-250px);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .sidebar-overlay {
+                display: block;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 30px;
+            height: 25px;
+            cursor: pointer;
+            z-index: 11;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hamburger {
+            width: 100%;
+            height: 3px;
+            background-color: #00ffcc;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .hamburger::before, .hamburger::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background-color: #00ffcc;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .hamburger::before {
+            transform: translateY(-10px);
+        }
+
+        .hamburger::after {
+            transform: translateY(10px);
+        }
+
+        .menu-toggle.active .hamburger {
+            background-color: transparent;
+        }
+
+        .menu-toggle.active .hamburger::before {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+
+        .menu-toggle.active .hamburger::after {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9;
         }
 
         .sidebar h2 {
             font-size: 1.5em;
             margin-bottom: 20px;
             text-shadow: 0 0 10px #ff00ff;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar h2 {
+                font-size: 1.2em;
+            }
         }
 
         .sidebar ul {
@@ -91,6 +190,14 @@
             margin-left: 270px;
             padding: 40px;
             min-height: 100vh;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
         }
 
         .container {
@@ -99,19 +206,36 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
         }
 
         .upload-section {
             text-align: center;
             margin-bottom: 40px;
+            padding: 20px;
+            border: 1px dashed #00ffcc;
+            border-radius: 10px;
         }
 
         .mode-toggle {
             margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
         }
 
         .mode-toggle label {
-            margin-right: 10px;
+            margin-right: 0;
+            white-space: nowrap;
         }
 
         .mode-toggle input {
@@ -129,11 +253,14 @@
             transition: all 0.3s ease;
             box-shadow: 0 0 15px #ff00ff;
             margin: 10px;
+            font-size: 1em;
         }
 
-        label.upload-btn:hover, #start-webcam:hover, #generate-deepfake:hover {
-            background: #00ffcc;
-            box-shadow: 0 0 25px #00ffcc;
+        @media (max-width: 480px) {
+            label.upload-btn, #start-webcam, #generate-deepfake {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
         }
 
         #image-preview, #webcam-container, #deepfake-preview {
@@ -141,6 +268,12 @@
             margin: 20px auto;
             position: relative;
             display: none;
+        }
+
+        @media (max-width: 768px) {
+            #image-preview, #webcam-container, #deepfake-preview {
+                max-width: 100%;
+            }
         }
 
         #webcam-video, #webcam-canvas {
@@ -170,11 +303,24 @@
             text-shadow: 0 0 10px #ff00ff;
         }
 
+        @media (max-width: 768px) {
+            .result-section h2 {
+                font-size: 1.5em;
+            }
+        }
+
         .confidence-meter {
             width: 150px;
             height: 150px;
             margin: 20px auto;
             position: relative;
+        }
+
+        @media (max-width: 480px) {
+            .confidence-meter {
+                width: 100px;
+                height: 100px;
+            }
         }
 
         .confidence-meter svg {
@@ -190,6 +336,15 @@
             stroke-dasharray: 440;
             stroke-dashoffset: 440;
             transition: stroke-dashoffset 1s ease;
+        }
+
+        @media (max-width: 480px) {
+            .confidence-meter circle {
+                cx: 50;
+                cy: 50;
+                r: 45;
+                stroke-width: 8;
+            }
         }
 
         .confidence-meter .bg-circle {
@@ -228,6 +383,12 @@
             margin-bottom: 20px;
         }
 
+        @media (max-width: 768px) {
+            .history-section h2, .visualization-section h2 {
+                font-size: 1.5em;
+            }
+        }
+
         .history-list {
             list-style: none;
         }
@@ -241,7 +402,22 @@
 
         #threejs-container {
             width: 100%;
-            height: 300px;
+            height: 300px; /* Default height */
+            min-height: 200px; /* Minimum height for smaller screens */
+            max-height: 50vh; /* Max height relative to viewport height */
+            overflow: hidden; /* Hide overflow if content exceeds container */
+        }
+
+        @media (max-width: 768px) {
+            #threejs-container {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #threejs-container {
+                height: 200px;
+            }
         }
 
         footer {
@@ -251,6 +427,12 @@
             border-top: 2px solid #00ffcc;
             box-shadow: 0 0 20px #00ffcc;
             position: relative;
+        }
+
+        @media (max-width: 768px) {
+            footer {
+                padding: 15px;
+            }
         }
 
         footer p {
@@ -298,6 +480,13 @@
             margin: 20px auto;
         }
 
+        @media (max-width: 480px) {
+            label.upload-btn, #start-webcam, #generate-deepfake {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+        }
+
         #particles {
             position: fixed;
             top: 0;
@@ -313,6 +502,11 @@
 </head>
 <body>
     <div id="particles"></div>
+
+    <div class="menu-toggle" id="menu-toggle">
+        <div class="hamburger"></div>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <header>
         <h1>CyberGuard: Deepfake Detector & Generator</h1>
@@ -340,8 +534,8 @@
                 </div>
                 <label for="image-upload" class="upload-btn">Upload Image</label>
                 <input type="file" id="image-upload" accept="image/*" style="display: none;">
-                <button id="start-webcam" style="display: none;">Start Webcam</button>
-                <button id="generate-deepfake" style="display: none;">Generate Deepfake</button>
+                <button id="start-webcam" type="button" style="display: none;">Start Webcam</button>
+                <button id="generate-deepfake" type="button" style="display: none;">Generate Deepfake</button>
                 <img id="image-preview" src="" alt="Image Preview">
                 <div id="webcam-container">
                     <video id="webcam-video" autoplay></video>
@@ -379,9 +573,7 @@
         </div>
     </div>
 
-    <footer>
-        <p>Developed by [Your Name] | <a href="https://github.com/yourusername" target="_blank">GitHub</a> | Powered by AI & Cybersecurity</p>
-    </footer>
+
 
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script>
@@ -428,11 +620,11 @@
         let scene, camera, renderer, mesh;
 
         // Initialize Three.js
-        function init3D() {
+        function init3D(width, height) {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, threejsContainer.clientWidth / 300, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(threejsContainer.clientWidth, 300);
+            renderer.setSize(width, height);
             threejsContainer.appendChild(renderer.domElement);
         
             // Add lighting
@@ -557,6 +749,9 @@
             });
         });
 
+        // Prevent default form submission if any (robustness)
+        document.addEventListener("submit", function(e) { e.preventDefault(); });
+
         imageUpload.addEventListener("change", async (event) => {
             const file = event.target.files[0];
             if (!file) return;
@@ -572,7 +767,13 @@
             } else {
                 const formData = new FormData();
                 formData.append("image", file);
-                await analyzeImage(formData);
+                try {
+                    await analyzeImage(formData);
+                } catch (err) {
+                    spinner.style.display = "none";
+                    explanation.textContent = `Upload failed: ${err.message}`;
+                    resultSection.style.display = "block";
+                }
             }
         });
 
@@ -708,7 +909,7 @@
             explanation.textContent = exp;
         
             if (label === "Deepfake" && errorImgPath) {
-                errorImage.src = `${errorImgPath}?t=${timestamp}`;
+                errorImage.src = `/static/${errorImgPath}?t=${timestamp}`;
                 errorImage.style.display = "block";
                 downloadBtn.href = errorImgPath;
                 downloadBtn.style.display = "inline-block";
@@ -718,7 +919,7 @@
             }
         
             if (label === "Deepfake" && heatmapPath) {
-                heatmapImage.src = `${heatmapPath}?t=${timestamp}`;
+                heatmapImage.src = `/static/${heatmapPath}?t=${timestamp}`;
                 heatmapImage.style.display = "block";
             } else {
                 heatmapImage.style.display = "none";
@@ -748,7 +949,33 @@
             resultSection.style.display = "block";
         }
 
-        init3D();
+        const menuToggle = document.getElementById("menu-toggle");
+        const sidebar = document.querySelector(".sidebar");
+        const sidebarOverlay = document.getElementById("sidebar-overlay");
+
+        menuToggle.addEventListener("click", () => {
+            sidebar.classList.toggle("active");
+            menuToggle.classList.toggle("active");
+            sidebarOverlay.style.display = sidebar.classList.contains("active") ? "block" : "none";
+        });
+
+        sidebarOverlay.addEventListener("click", () => {
+            sidebar.classList.remove("active");
+            menuToggle.classList.remove("active");
+            sidebarOverlay.style.display = "none";
+        });
+
+        // Initial 3D setup
+        init3D(threejsContainer.clientWidth, threejsContainer.clientHeight);
+
+        // Handle window resize for 3D visualization
+        window.addEventListener('resize', () => {
+            const width = threejsContainer.clientWidth;
+            const height = threejsContainer.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
     </script>
 </body>
 </html>
